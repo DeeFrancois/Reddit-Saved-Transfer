@@ -25,7 +25,7 @@ Then I noticed reddit doesn't have much functionality for sorting/browsing your 
 - Download awthemes and place into the same folder as the .py file: https://sourceforge.net/projects/tcl-awthemes/
 - Now you can run the program, log in, and click Pull Saves at the top (this may take some time depending on your internet)
 - Once logged in you can scroll through your saves, click on the thumbnail to select it and it will move to the middle or right click to hide it
-- Here you can click to unsave if you'd like or transfer to the second account it's you've logged in
+- Here you can click to unsave if you'd like or transfer to the second account if you've logged it in
 - You can also enable the Video Player and click the center thumbnail to play the video (scroll wheel for volume, left click to pause)
 - Click Start to begin automatic loop for transferring the saves (speed limited by API) 
 - Click the arrow at the top to change direction of transfer
