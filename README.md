@@ -1,6 +1,8 @@
 # Reddit-Saved-Transfer
 A tool for transferring posts from your Reddit Saved list to another account/personal subreddit
 
+<sup>*Ready for public use as I don't plan on simplifying, but still has some major bugs to fix and I've yet to clean up the code. It works enough for me to use it regularly though, so I figured I'd upload it</sup>
+
 ![demo](https://raw.githubusercontent.com/DeeFrancois/Reddit-Saved-Transfer/master/DocumentationImages/demo.png)
 
 # Motivation
@@ -17,7 +19,6 @@ Then I noticed reddit doesn't have much functionality for sorting/browsing your 
 - Pull last 100 posts (hot/top/new) from a Subreddit 
 - Automated transfering of posts to another account
 - Automated transferring of posts to a subreddit
-- 
 
 # How to Use (May have to just make a video..)
 
