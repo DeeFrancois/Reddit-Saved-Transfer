@@ -2,7 +2,6 @@
 #- Delete thumbs after close
 #- Disable Transfer related buttons when there isn't a second login
 #- No thumbnail mode is suppose to make it less sluggish (when moving around window) but it doesn't because the "weight" comes from the widget count and not the image count
-from re import sub
 import tkinter as tk
 import sys
 import os
