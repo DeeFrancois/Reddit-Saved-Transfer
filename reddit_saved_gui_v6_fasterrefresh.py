@@ -1447,7 +1447,7 @@ package ifneeded awdark 7.12 \
         #s = ttk.Style()
         #ttk.Style().configure('testStyle.TFrame',background='#fffffff') #33393b
         
-        self.root.title("Reddit Saved Transferer - https://github.com/Dear-Birthdays")
+        self.root.title("Reddit Saved Transferer - https://github.com/DeeFrancois")
         self.root.geometry("980x600")
         self.root.resizable(False,False)
         self.root.bind('<Escape>',self.close)
