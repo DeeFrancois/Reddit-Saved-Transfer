@@ -1,0 +1,12 @@
+**REMOVE THIS LINE** ~ register app for each account (https://www.reddit.com/prefs/apps), seperate logins by 1 line, rename file to login.txt
+Username=_
+Password=
+Client ID=
+Client Secret Key=
+User Agent=
+
+Username=
+password=
+Client ID=
+Client Secret Key=
+User Agent=
