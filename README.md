@@ -35,3 +35,4 @@ Then I noticed reddit doesn't have much functionality for sorting/browsing your 
 - Click the Posting As button to change which account to post as
 - The Refresh button is for applying filters
 - Top/Hot/New only works if you've clicked Pull Subreddit instead of Pull Saves with a subreddit entered in the top bar
+- The "Extract List" button is for making a txt file with a list of posts that were later deleted by the user/moderators
