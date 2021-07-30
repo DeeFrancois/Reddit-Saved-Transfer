@@ -1,7 +1,5 @@
 #Things to do:
 #- Delete thumbs after close
-#- "Post As: " option for sub mode
-#- Faster Refresh
 #- Disable Transfer related buttons when there isn't a second login
 #- No thumbnail mode is suppose to make it less sluggish (when moving around window) but it doesn't because the "weight" comes from the widget count and not the image count
 from re import sub
@@ -11,18 +9,15 @@ import os
 import threading
 from tkinter.constants import ANCHOR, RIGHT
 import praw
-from PIL import Image, ImageDraw, ImageTk
+from PIL import Image, ImageTk
 import urllib
 import webbrowser
-import time
-from tkinter import Widget
-import pickle
 import tkinter.ttk as ttk
 import youtube_dl
 import mpv
 
 
-#r.user.get_saved(params={'sr':'Askreddit'}) 
+#r.user.get_saved(params={'sr':'Askreddit'}) Might be able to filter during pull request rather than after 
 class reddit_saved:
 
     def __init__(self):
@@ -56,60 +51,43 @@ class reddit_saved:
         self.posting_as_button_flipper=0
         self.sub_to_post = "Unselected"
         self.posted_count = 0
-
         return
     
     def close(self,event):
         sys.exit(0)
-
-    def test_func(self):
-        the_widget_list = self.frame_thumbs.winfo_children()
-        top_widget = the_widget_list[0]
-        top_widget.configure(takefocus=True)
         
 
-    def clear_canvas(self):
+    def clear_canvas(self): #Clear post feed, recreates container, resets scrollbar
+
         self.left_imgs.clear()
-        #.left_active_nsfw = []
-        #self.left_active_sfw = []
-        #self.left_active_text = []
-        
-        self.frame_thumbs.destroy()
+        self.frame_thumbs.destroy() #Still too slow
         
         self.frame_thumbs=ttk.Frame(self.canvas)
         self.canvas.create_window((0,0),window=self.frame_thumbs,anchor='nw')
         self.canvas.config(scrollregion=self.canvas.bbox('all'))
-        #self.root.bind_all("<MouseWheel>",self.on_mousewheel)
-        #self.root.bind_all("<Button-3>",self.on_rightclick)
         self.canvas.yview_moveto('0')
-            #time.sleep(1)
+
     def b_clear_canvas(self):
+
         self.right_imgs.clear()
         self.b_frame_thumbs.destroy()
 
         self.b_frame_thumbs=ttk.Frame(self.b_canvas)
         self.b_canvas.create_window((0,0),window=self.b_frame_thumbs,anchor='nw')
         self.b_canvas.config(scrollregion=self.b_canvas.bbox('all'))
-        #self.root.bind_all("<MouseWheel>",self.on_mousewheel)
-        #self.root.bind_all("<Button-3>",self.on_rightclick)
+
         self.b_canvas.yview_moveto('0')
 
-        #the_widget_list = self.b_frame_thumbs.winfo_children()
-        #for widget in the_widget_list:
-        #    if widget.winfo_children():
-        #        the_widget_list.extend(widget.winfo_children())
-        #for widget in the_widget_list:
-        #    widget.destroy()
+    def link_callback(event,url): #Opens browsers on link click
 
-    def link_callback(event,url):
-        #print(url)
         full_url = 'https://www.reddit.com' + url
         webbrowser.open_new(full_url)
     
     def on_mousewheel(self,event):
+
         try:
-            if event.widget.master == self.frame_thumbs or event.widget.master.master == self.frame_thumbs:
-                self.canvas.yview_scroll(int(-1*(event.delta/120)),'units')
+            if event.widget.master == self.frame_thumbs or event.widget.master.master == self.frame_thumbs: #If mousehweel event happens on Left Side.. 
+                self.canvas.yview_scroll(int(-1*(event.delta/120)),'units') #Scroll the thumbnail canvas
         except:
             pass
         try:
@@ -118,7 +96,8 @@ class reddit_saved:
         except:
             pass
     
-    def on_rightclick(self,event):
+    def on_rightclick(self,event): #Right Click to hide post widget
+
         try:
             if event.widget.master == self.frame_thumbs:
                 event.widget.destroy()
@@ -136,17 +115,16 @@ class reddit_saved:
 
 
     def test_remove_and_replace(self):
+
         the_widget_list = self.frame_thumbs.winfo_children()
         top_widget = the_widget_list[0]
         top_widget.destroy()
-
 
         ### BUILD CARD ROUTINE
         url=self.filtered_list[self.left_index].thumbnail
         title=self.filtered_list[self.left_index].title[:35]
         sub=self.filtered_list[self.left_index].subreddit.display_name
         submission = self.filtered_list[self.left_index]
-        #print(self.filtered_list[self.left_index].permalink)
         
         link=self.filtered_list[self.left_index].permalink
         displayed_link = link[:35] + '...'
@@ -154,14 +132,13 @@ class reddit_saved:
         current_card=ttk.Frame(self.frame_thumbs)
         
         current_card.pack(anchor='nw')
-        #print(url)
+
         try:
             urllib.request.urlretrieve(url,'{}/thumbs/left_saved.jpg'.format(self.cwd))
         except:
-            print("Urllib error")
-            #print(self.filtered_list[self.left_index].preview)
-            print(self.filtered_list[self.left_index].permalink)
+            #If you can't retrieve it, it's likely a deleted post (but still can be viewed) 
             self.deleted_list.append('http://reddit.com'+self.filtered_list[self.left_index].permalink)
+
         img = Image.open('{}/thumbs/left_saved.jpg'.format(self.cwd))
         img.thumbnail((100,100))
         photo = ImageTk.PhotoImage(img)
@@ -170,7 +147,7 @@ class reddit_saved:
         current_button = ttk.Button(current_card,image=photo)
         current_button.grid(row=0,column=0,rowspan=3)
         current_button.config(command=lambda a=submission,b=current_card:self.select_card(a,b))
-        #current_button.bind("<Button-1>",lambda event,a=link:self.select_card(a))
+
         current_title=ttk.Label(current_card,text=title)
         current_title.grid(row=0,column=1,sticky='w')
 
@@ -182,13 +159,14 @@ class reddit_saved:
         current_link.bind("<Button-1>",lambda event,a=link:self.link_callback(a) )
         self.left_index+=1
 
-            ###END BULD CARD
+        ###END BULD CARD
+
     def flip_arrow(self,event):
+
         self.loop_it=0
         self.center_start_button.config(text="Start")
-
         self.canvas_transfer.delete('all')
-        #print("Should be deleted now")
+
         if self.transfer_from_arrow==0:
             self.transfer_from_arrow=1
             self.canvas_transfer.create_line(10,20,90,20,arrow='first',width=7,fill='black')
@@ -205,6 +183,7 @@ class reddit_saved:
 
         
     def start_loop(self):
+
         if self.loop_it==0:
             self.loop_it=1
             self.center_start_button.config(text="Stop")
@@ -213,6 +192,7 @@ class reddit_saved:
             self.center_start_button.config(text="Start")
     
     def automatic_func(self,side):
+
         if self.transfer_from_arrow == 0:
             the_widget_list = self.frame_thumbs.winfo_children()
         else:
@@ -221,14 +201,13 @@ class reddit_saved:
             self.last_button_auto.state(['!focus'])
         except:
             pass
-        #the_widget_list = self.frame_thumbs.winfo_children()
+
         if len(the_widget_list) == 0:
             self.start_loop()
             return
         top_widget = the_widget_list[0]
-        #print(top_widget.children)
+
         button_maybe=top_widget.winfo_children()[0]
-        #print(button_maybe)
         button_maybe.state(['focus'])
         self.last_button_auto = button_maybe
         button_maybe.invoke()
@@ -237,29 +216,25 @@ class reddit_saved:
         else:
             self.make_post()
         
-        #button_maybe.invoke()
 
     def build_card(self,side):
+
         photo = self.center_img
-        
         title =self.cc_title 
         subreddit=self.cc_subreddit
         link=self.cc_link 
         displayed_url=self.cc_displayed_url
-        #url=self.cc_url
+
         if side == 0:
+
             new_card = ttk.Frame(self.frame_thumbs)
             self.left_imgs.append(photo)
+
         else:
+
             new_card = ttk.Frame(self.b_frame_thumbs)
             new_card.bind()
             self.right_imgs.append(photo)
-        
-        #new_card.grid(row=2,column=0)
-
-        
-        
-        
         
         new_card_button = ttk.Button(new_card,image=photo)
         new_card_button.config(command=lambda a=self.current_center_card,b=new_card,c=side:self.select_card(a,b,c))
@@ -280,10 +255,9 @@ class reddit_saved:
         self.last_widget.destroy()
 
     def make_post(self):
-        #need to make this so you can choose which account to post as (check box near login card?)
         #TODO: crosspost vs pull url and directly post option
         #TODO: Maybe don't need two different self.target_sub's
-        #print(self.current_center_card.submission)
+
         sub_id = self.current_center_card.id
 
         if self.posting_as_flag==0: #Post as Left
@@ -315,12 +289,14 @@ class reddit_saved:
                 print("Error Crossposting")
         
         self.build_card(side)
+
         if self.unsave_after_transfer_flag.get()==1:
             self.last_widget.destroy()
 
     def transfer_post(self):
+
         submission = self.current_center_card
-        #If transfer_flag = 1, transfer_to = self.b_user_object
+
         if self.current_center_acc == 0: #Left
             transfer_from = self.r
             transfer_to = self.r2
@@ -334,11 +310,6 @@ class reddit_saved:
         to_save=transfer_to.submission(sub_id)
         to_unsave = transfer_from.submission(sub_id)
         
-        #print(to_save.title)
-        #print(to_save.is_saved)
-        
-        #print(f'Is Submission: {to_save.title} from account: {transfer_from.user.me().name} saved by {transfer_to.user.me().name}? {to_save.saved} ')
-        #print(f'Has {transfer_from.user.me().name} already saved this? {transfer_from.submission(sub_id).saved} <-- SHOULD BE TRUE')
         print(f"Transferred Post: {to_save.title} To {transfer_to.user.me().name}'s Saved List")
         print(f"Removed Post: {to_save.title} from {transfer_from.user.me().name}'s Saved List")
         to_save.save()
@@ -353,10 +324,7 @@ class reddit_saved:
 
 
     def place_in_center(self,submission,side):
-        #try:
-        #    print(submission.crosspost_parent)
-        #except:
-        #    pass
+
         self.current_center_card=submission
         self.current_center_acc=side
         
@@ -367,16 +335,7 @@ class reddit_saved:
         self.cc_displayed_url = submission.permalink[:35] + '...'
         self.cc_url = submission.thumbnail
         self.cc_inner_url = submission.url
-        #print(self.cc_inner_url)
 
-
-
-        #print(self.cc_inner_url)
-        #title = submission.title[:35]
-        #subreddit = submission.subreddit.display_name
-        #link = submission.permalink
-        #displayed_url = submission.permalink[:35] + '...'
-        #url = submission.thumbnail
         try:
             urllib.request.urlretrieve(self.cc_url,'{}/thumbs/center_thumb.jpg'.format(self.cwd))
             img = Image.open('{}/thumbs/center_thumb.jpg'.format(self.cwd))
@@ -406,7 +365,7 @@ class reddit_saved:
             except:
                 self.last_widget=0
         self.place_in_center(submission,side)
-        #print(info)
+
         self.last_widget=info
         info.config(takefocus=True)
 
@@ -417,31 +376,28 @@ class reddit_saved:
             self.b_stop_generation_flag=1
     def display_saved(self):
         self.clear_canvas()
-        #count = 0
+
         self.display_limit = 1000 #Option For Fast Load (Infinite scroll + display_limit = 10)
         self.left_index=0
         
         self.generation_flag=1
         self.progress_bar.grid(row=0,column=0)
         while self.left_index < self.display_limit and self.left_index < len(self.filtered_list) and self.stop_generation_flag==0:
-            #self.progress_bar.config(length=self.display_limit)
+
             current_card=ttk.Frame(self.frame_thumbs)
             current_card.pack(anchor='nw')
 
-            #current_card.grid_propagate(False)
-            #print(self.left_list[count].preview['images'][0])
-                #url = self.left_list[count].preview['images'][0]['resolutions'][1]['url']
+
             url=self.filtered_list[self.left_index].thumbnail
             title=self.filtered_list[self.left_index].title[:35]
             sub=self.filtered_list[self.left_index].subreddit.display_name
             submission = self.filtered_list[self.left_index]
-            #print(self.filtered_list[self.left_index].permalink)
+
             
             link=self.filtered_list[self.left_index].permalink
             displayed_link = link[:35] + '...'
             
-            
-            #print(url)
+
             if self.thumbnail_flag.get() == 1:
                 try:
                     urllib.request.urlretrieve(url,'{}/thumbs/left_saved.jpg'.format(self.cwd))
@@ -451,23 +407,20 @@ class reddit_saved:
                     self.left_imgs.append(photo)
                 except:
                     print("Urllib error")
-                    #print(self.filtered_list[self.left_index].preview)
                     print(self.filtered_list[self.left_index].permalink)
                     photo=self.placeholder_image
                 
                 current_button = ttk.Button(current_card,image=photo)
             else:
-                
-                #img = Image.open('{}/thumbs/placeholder.jpg'.format(self.cwd))
-                #photo=ImageTk.PhotoImage(img)
+
                 current_button = ttk.Button(current_card,image=self.placeholder_image)
-                #self.center_img=photo
+
                 
 
             
             current_button.grid(row=0,column=0,rowspan=3)
             current_button.config(command=lambda a=submission,b=current_card,c=0:self.select_card(a,b,c))
-            #current_button.bind("<Button-1>",lambda event,a=link:self.select_card(a))
+
             current_title=ttk.Label(current_card,text=title)
             current_title.grid(row=0,column=1,sticky='w')
 
@@ -487,7 +440,7 @@ class reddit_saved:
         self.progress_bar.grid_remove()
         self.generation_flag=0
         sys.exit(0)
-            #print(self.left_index)
+
     
     def b_display_saved(self):
         self.b_clear_canvas()
@@ -496,20 +449,19 @@ class reddit_saved:
         self.b_generation_flag=1
         self.b_progress_bar.grid(row=0,column=1)
         while self.right_index < self.display_limit and self.right_index < len(self.b_filtered_list) and self.b_stop_generation_flag==0:
+
             current_card=ttk.Frame(self.b_frame_thumbs)
             current_card.pack(anchor='nw')
-            #current_card.grid_propagate(False)
-            #print(self.left_list[self.right_index].preview['images'][0])
-                #url = self.left_list[self.right_index].preview['images'][0]['resolutions'][1]['url']
+
             url=self.b_filtered_list[self.right_index].thumbnail
             title=self.b_filtered_list[self.right_index].title[:35]
             sub=self.b_filtered_list[self.right_index].subreddit.display_name
             submission = self.b_filtered_list[self.right_index]
-            #print(self.filtered_list[self.right_index].permalink)
+
             
             link=self.b_filtered_list[self.right_index].permalink
             displayed_link = link[:35] + '...'
-            #print(url)
+
             try:
                 urllib.request.urlretrieve(url,'{}/thumbs/right_saved.jpg'.format(self.cwd))
                 img = Image.open('{}/thumbs/right_saved.jpg'.format(self.cwd))
@@ -518,7 +470,7 @@ class reddit_saved:
                 self.right_imgs.append(photo)
             except:
                 print("Urllib error")
-                #print(self.filtered_list[self.right_index].preview)
+
                 print(self.b_filtered_list[self.right_index].permalink)
                 photo = self.placeholder_image
 
@@ -563,7 +515,7 @@ class reddit_saved:
                 self.left_sub_list.append(item.subreddit.display_name)
             else:
                 self.right_sub_list.append(item.subreddit.display_name)
-        #self.left_sub_list=sorted(self.left_sub_list)
+
 
     def refresh_filters(self):
         
@@ -703,27 +655,27 @@ class reddit_saved:
         
     def pull_saves(self):
         self.generation_flag=1
-        #if len(self.left_list) == 0:
+
         self.left_list=list(self.user_object.saved(limit=self.generate_amount))
-        #list.reverse(self.left_list)
+
         self.left_sub_list = []
         self.pull_subreddits(0,self.left_list)
         self.left_sub_list=sorted(set(self.left_sub_list))
         self.entry_pull_sub.config(values=self.left_sub_list)
-        #self.canvas_label.config(text="Placeholder's Saved List - {} Posts Found".format(len(self.filtered_list)))
+
 
         self.refresh_filters()
     
     def b_pull_saves(self):
         self.b_generation_flag=1
-        #if len(self.right_list) == 0:
+
         self.right_list=list(self.b_user_object.saved(limit=self.generate_amount))
-        #list.reverse(self.right_list)
+
         self.right_sub_list=[]
         self.pull_subreddits(1,self.right_list)
         self.right_sub_list=sorted(set(self.right_sub_list))
         self.b_entry_pull_sub.config(values=self.right_sub_list)
-        #self.b_canvas_label.config(text="Placeholder's Saved List - {} Posts Found".format(len(self.b_filtered_list)))
+
 
         self.b_refresh_filters()
 
@@ -779,12 +731,12 @@ class reddit_saved:
             #if self.transfer_from_arrow == 0: #If arrow goes left to right, reset right
             self.b_button_pull_saves.config(text="Pull Saves")
             self.b_button_pull_saves.config(command=self.b_pull_saves)
-            #self.b_clear_canvas()
+
             self.b_canvas_label.config(text=f"{self.b_username}'s Saved List")
-            #else: #reset left
+
             self.button_pull_saves.config(text="Pull Saves")
             self.button_pull_saves.config(command=self.pull_saves)
-            #self.clear_canvas()
+
             self.canvas_label.config(text=f"{self.username}'s Saved List")
 
             self.center_button_save.config(text="UnSave")
@@ -794,18 +746,13 @@ class reddit_saved:
         
     def build_middle(self):
         self.built_middle=1
-        #print("built mid")
+
         for i in range(0,3):
             self.main_frame.grid_columnconfigure(i,weight=1)
 
         if self.right_logged_in == 0:
             self.b_entry_frame.grid(row=0,column=2)
 
-        
-        
-        
-        #for i in range(0,6):
-        #    self.mid_column_frame.grid_rowconfigure(i,weight=1)
         
         self.mid_column_frame = ttk.Frame(self.main_frame)
         self.mid_column_frame.grid(row=0,column=1,sticky='n'+'s')
@@ -815,7 +762,7 @@ class reddit_saved:
             self.mid_column_frame.grid_rowconfigure(i,weight=1)
 
         self.mid_column_frame.grid_columnconfigure(0,weight=1)
-        #self.mid_column_frame.grid_rowconfigure(2,weight=1)
+
 
         self.mid_label_frame = ttk.Frame(self.mid_column_frame)
         self.mid_label_frame.grid(row=0,column=0)
@@ -845,9 +792,6 @@ class reddit_saved:
         self.check_unsave_after_transfer.grid(row=2,column=0,columnspan=2)
         
         #Haven't (and idk if I want to) allowed Transfering from sub to sub yet
-        #self.check_delete_after_transfer= ttk.Checkbutton(self.mid_control_box,var=self.delete_after_transfer_flag,text="Delete After Transfer")
-        #self.check_delete_after_transfer.grid(row=3,column=0,columnspan=2)
-        #self.check_delete_after_transfer.config(state="disabled")
 
         
         self.manual_flag.set(1)
@@ -894,7 +838,7 @@ class reddit_saved:
         self.progress_bar_frame.grid(row=6,column=0)
         self.progress_bar = ttk.Progressbar(self.progress_bar_frame,orient='horizontal',length=100,mode='determinate')
         self.b_progress_bar = ttk.Progressbar(self.progress_bar_frame,orient='horizontal',length=100,mode='determinate')
-        #self.progress_bar.grid(row=5,column=0)
+
         ###VIDEO PLAYER###
        
     def fullscreen_maybe(self,event):
@@ -911,23 +855,23 @@ class reddit_saved:
         if self.video_flag.get()==0:
             self.player.terminate()
             self.video_player_frame.destroy()
-            #print("Off")
+
         else: #Turned Off
-            #print("On") 
+
             self.video_player_frame = ttk.Frame(self.mid_column_frame)
             self.video_player_frame.grid(row=3,column=0)
             self.video_button = tk.Button(self.video_player_frame,bg='#33393b',width=38,height=9,command=lambda:self.player.keypress('p'))
             self.video_button.pack()
             self.player=mpv.MPV(ytdl=True,ytdl_format="best",background='#33393b',volume=0,input_default_bindings=True,input_vo_keyboard=True,wid=str(int(self.video_button.winfo_id())))
             self.player.loop_playlist='inf'
-            #self.player.keypress('m')
+
             self.video_button.bind("<Button-3>",self.fullscreen_maybe)
             self.video_button.bind("<MouseWheel>", self.fullscreen_maybe)
-            #self.video_button.bind("<Button-3>",self.fullscreen_maybe)
+
 
     def play_video(self):
         if self.video_flag.get()==1:
-            #if self.nsfw_flag.get()==1
+
             full_link = self.cc_inner_url
             if self.nsfw_flag.get()==1:
                 full_link=self.cc_inner_url.replace('gfycat.com','redgifs.com/watch')
@@ -943,9 +887,9 @@ class reddit_saved:
                     new_link=info_dict['url']
                 except KeyError:
                     new_link=info_dict['entries'][0]['url']
-            #print(full_link)
+
             self.player.play(full_link)
-            #print(full_link)
+
 
     def build_feed(self):
         self.left_logged_in=1
@@ -990,8 +934,7 @@ class reddit_saved:
             urllib.request.urlretrieve(thumb_url,'{}/thumbs/user_icon.jpg'.format(self.cwd))
         except:
             print("Urllib error")
-            print(thumb_url)
-            #print(self.filtered_list[count].preview)
+
         
         img = Image.open('{}/thumbs/user_icon.jpg'.format(self.cwd))
         img.thumbnail((50,50))
@@ -1006,14 +949,6 @@ class reddit_saved:
         self.entry_pull_sub.grid(row=2,column=0,padx=5,pady=5)
         self.button_load_saves = ttk.Button(self.login_card,text="Extract List",command=self.extract_save_file)
         self.button_load_saves.grid(row=2,column=2)
-        #self.nsfw_button = ttk.Checkbutton(self.feed_control_box,text="NSFW",variable=self.nsfw_flag)
-        #self.nsfw_button.grid(row=1,column=0,padx=5)
-        #self.temp_button = ttk.Checkbutton(self.feed_control_box,text="SFW",variable=self.sfw_flag)
-        #self.temp_button.grid(row=1,column=1,padx=5)
-        #self.temp_button_two = ttk.Checkbutton(self.feed_control_box,text="Text Posts",variable=self.text_post_flag)
-        #self.temp_button_two.grid(row=1,column=2,padx=5)
-        #self.filter_button = ttk.Button(self.feed_control_box,text="Retrieve",command=self.pull_saves)
-        #self.filter_button.grid(row=1,column=3,padx=5)
 
         
         self.feed_frame= ttk.Frame(self.left_column_frame)
@@ -1022,20 +957,16 @@ class reddit_saved:
         self.feed_frame.grid_propagate(False)
         self.feed_frame.pack(expand=True,fill='y')
 
-        
-        #print(dir(self.r.user.me()))
-        #print(self.user_object.name)
         #Build Scrollable Feed
         self.canvas_label = ttk.Label(self.feed_frame,text=f"{self.username}'s Saved List")
         self.canvas_label.pack(pady=1,fill='x')
-        #self.check_post_as = ttk.Checkbutton(self.feed_frame,text='Post As')
-        #self.check_post_as.place(x=200,height=20,width=70)
+
         self.canvas = tk.Canvas(self.feed_frame,bg='black',width=320,height=340,highlightthickness=0) #550
         self.canvas.pack(padx=2,expand=True,fill='both')
 
         self.ybar=ttk.Scrollbar(self.feed_frame,orient="vertical",command=self.canvas.yview)
         self.ybar.grid(column=1,row=0,sticky='ns')
-        #self.ybar.pack(side='right')
+
         self.canvas.configure(yscrollcommand=self.ybar.set)
 
         self.frame_thumbs=ttk.Frame(self.canvas)
@@ -1044,11 +975,9 @@ class reddit_saved:
         self.root.bind_all("<MouseWheel>",self.on_mousewheel)
         self.root.bind_all("<Button-3>",self.on_rightclick)
         self.canvas.yview_moveto('0')
-        #print(dir(self.r.user.me()))
-        #print(self.user_object.name)
+
         #Build Scrollable Feed
-        #self.frame_thumbs=ttk.Frame(self.left_feed_frame,bg='grey')
-        #self.frame_thumbs.pack()
+
         self.end_card = ttk.Frame(self.left_column_frame,takefocus=False)
         self.end_card.pack(side='bottom')
         
@@ -1079,8 +1008,6 @@ class reddit_saved:
         if self.built_middle == 0:
             self.build_middle()
 
-
-        #self.pull_saves()
     
     def b_build_feed(self):
         self.right_logged_in=1
@@ -1127,7 +1054,6 @@ class reddit_saved:
         except:
             print("Urllib error")
             print(thumb_url)
-            #print(self.filtered_list[count].preview)
         
         img = Image.open('{}/thumbs/user_icon.jpg'.format(self.cwd))
         img.thumbnail((50,50))
@@ -1141,14 +1067,7 @@ class reddit_saved:
         self.b_entry_pull_sub.grid(row=2,column=0,padx=5,pady=5)
         self.b_extract_saves = ttk.Button(self.b_login_card,text="Extract List", command =self.b_extract_save_file)
         self.b_extract_saves.grid(row=2,column=2)
-        #self.nsfw_button = ttk.Checkbutton(self.feed_control_box,text="NSFW",variable=self.nsfw_flag)
-        #self.nsfw_button.grid(row=1,column=0,padx=5)
-        #self.temp_button = ttk.Checkbutton(self.feed_control_box,text="SFW",variable=self.sfw_flag)
-        #self.temp_button.grid(row=1,column=1,padx=5)
-        #self.temp_button_two = ttk.Checkbutton(self.feed_control_box,text="Text Posts",variable=self.text_post_flag)
-        #self.temp_button_two.grid(row=1,column=2,padx=5)
-        #self.filter_button = ttk.Button(self.feed_control_box,text="Retrieve",command=self.pull_saves)
-        #self.filter_button.grid(row=1,column=3,padx=5)
+
 
         
         self.b_feed_frame= ttk.Frame(self.right_column_frame)
@@ -1157,9 +1076,7 @@ class reddit_saved:
         self.b_feed_frame.grid_propagate(False)
         self.b_feed_frame.pack(expand=True,fill='y')
 
-        
-        #print(dir(self.r.user.me()))
-        #print(self.b_user_object.name)
+
         #Build Scrollable Feed
         self.b_canvas_label = ttk.Label(self.b_feed_frame,text=f"{self.b_username}'s Saved List")
         self.b_canvas_label.pack(pady=1,fill='x')
@@ -1174,11 +1091,9 @@ class reddit_saved:
         self.b_canvas.create_window((0,0),window=self.b_frame_thumbs,anchor='nw')
         self.b_canvas.config(scrollregion=self.b_canvas.bbox('all'))
         self.b_canvas.yview_moveto('0')
-        #print(dir(self.r.user.me()))
-        #print(self.b_user_object.name)
+
         #Build Scrollable Feed
-        #self.frame_thumbs=ttk.Frame(self.right_feed_frame,bg='grey')
-        #self.frame_thumbs.pack()
+
         self.b_end_card = ttk.Frame(self.right_column_frame,takefocus=False)
         self.b_end_card.pack(side='bottom')
         
@@ -1226,7 +1141,7 @@ class reddit_saved:
                             user_agent=self.user_agent,
                             username=self.username)
 
-            #print(self.username)
+
             self.build_feed()
         else:
             self.b_username = self.b_entry_user.get()
@@ -1241,8 +1156,7 @@ class reddit_saved:
                             password=self.b_password,
                             user_agent=self.b_user_agent,
                             username=self.b_username)
-                            
-            #print(self.b_username)
+
             self.b_build_feed()
         
         
@@ -1378,7 +1292,7 @@ class reddit_saved:
 
         if self.generation_flag==1:
             try:
-                #self.button_refresh.config(state='disabled')
+
                 self.button_refresh.config(text="Stop Generation")
                 self.button_refresh.config(command=lambda a=0: self.stop_generation(a))
                 self.button_pull_saves.config(state='disabled')
@@ -1454,18 +1368,12 @@ package ifneeded awdark 7.12 \
         #self.root.overrideredirect(1)
         #self.root.attributes('-topmost',1)
 
-        #self.top_bar = tk.Frame(self.root,bg='grey',relief='raised',bd=2)
-        #self.close_button=tk.Button(self.top_bar,text='X',command=self.close)
-        #self.close_button.pack(side='right')
-        #self.top_bar.pack(fill='x')
-        
         self.main_frame = ttk.Frame(self.root)
         self.main_frame.pack(fill='both',expand=True)
         self.main_frame.grid_rowconfigure(0,weight=1)
         for i in range(0,2):
             self.main_frame.grid_columnconfigure(i,weight=1)
-            #print(i)
-        #self.main_frame.grid_propagate(False)
+
         self.build_login_page()
         
         self.main_frame.bind('<B1-Motion>',self.move_window)
