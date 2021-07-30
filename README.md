@@ -19,7 +19,7 @@ Then I noticed reddit doesn't have much functionality for sorting/browsing your 
 - Pull last 100 posts (hot/top/new) from a Subreddit 
 - Automated transfering of posts to another account
 - Automated transferring of posts to a subreddit
-- Extract a txt file containing a list of saved posts that have been deleted
+- Extract a txt file containing a list of saved posts that were later deleted by the user/moderators
 
 # How to Use (May have to just make a video..)
 
