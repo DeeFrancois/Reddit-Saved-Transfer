@@ -40,7 +40,7 @@ class reddit_saved:
         self.b_generation_flag=0
         self.stop_generation_flag=0
         self.b_stop_generation_flag=0
-        self.generate_amount=1000
+        self.generate_amount=999
         self.current_center_acc=0
         self.loop_it=0
         self.transfer_from_arrow=0
@@ -50,6 +50,9 @@ class reddit_saved:
         self.posting_as_button_flipper=0
         self.sub_to_post = "Unselected"
         self.posted_count = 0
+        self.generated_flag = 0
+        self.page_offset = 0
+        self.reverse_state = 0
         return
     
     def close(self,event):
@@ -57,14 +60,28 @@ class reddit_saved:
         
 
     def clear_canvas(self): #Clear post feed, recreates container, resets scrollbar
-
-        self.left_imgs.clear()
-        self.frame_thumbs.destroy() #Still too slow
         
-        self.frame_thumbs=ttk.Frame(self.canvas)
-        self.canvas.create_window((0,0),window=self.frame_thumbs,anchor='nw')
-        self.canvas.config(scrollregion=self.canvas.bbox('all'))
         self.canvas.yview_moveto('0')
+        
+        
+        try:
+            self.canvas.move(self.frame_thumbs_id,400,0)
+            self.canvas.xview_moveto('0')
+            
+        except:
+            print("bruh")
+        
+        #self.frame_thumbs.destroy()
+        #self.frame_thumbs.destroy() #Still too slow
+        
+        temp=ttk.Frame(self.canvas)
+        self.frame_thumbs_id=self.canvas.create_window((0,0),window=temp,anchor='nw')
+        self.canvas.config(scrollregion=self.canvas.bbox('all'))
+        #self.canvas.yview_moveto('0')
+        threading.Thread(target=self.frame_thumbs.destroy()).start
+        #self.frame_thumbs.destroy()
+        self.frame_thumbs=temp
+        self.left_imgs.clear()
 
     def b_clear_canvas(self):
 
@@ -232,7 +249,7 @@ class reddit_saved:
         else:
 
             new_card = ttk.Frame(self.b_frame_thumbs)
-            new_card.bind()
+
             self.right_imgs.append(photo)
         
         new_card_button = ttk.Button(new_card,image=photo)
@@ -375,13 +392,14 @@ class reddit_saved:
             self.b_stop_generation_flag=1
     def display_saved(self):
         self.clear_canvas()
+        self.generated_flag=1
 
-        self.display_limit = 1000 #Option For Fast Load (Infinite scroll + display_limit = 10)
-        self.left_index=0
-        
+        self.display_limit = 100 #Option For Fast Load (Infinite scroll + display_limit = 10)
+        self.left_index=self.page_offset
+        print("displaying with left index: ",self.left_index)
         self.generation_flag=1
         self.progress_bar.grid(row=0,column=0)
-        while self.left_index < self.display_limit and self.left_index < len(self.filtered_list) and self.stop_generation_flag==0:
+        while self.left_index < (self.display_limit+self.page_offset) and self.left_index < len(self.filtered_list) and self.stop_generation_flag==0:
 
             current_card=ttk.Frame(self.frame_thumbs)
             current_card.pack(anchor='nw')
@@ -408,8 +426,10 @@ class reddit_saved:
                     print("Urllib error")
                     print(self.filtered_list[self.left_index].permalink)
                     photo=self.placeholder_image
-                
-                current_button = ttk.Button(current_card,image=photo)
+                try:
+                    current_button = ttk.Button(current_card,image=photo)
+                except:
+                    return
             else:
 
                 current_button = ttk.Button(current_card,image=self.placeholder_image)
@@ -429,7 +449,7 @@ class reddit_saved:
             current_link=ttk.Label(current_card,text=displayed_link)
             current_link.grid(row=2,column=1,sticky='w')
             current_link.bind("<Button-1>",lambda event,a=link:self.link_callback(a) )
-            if self.left_index==0:
+            if self.left_index==self.page_offset:
                 the_widget_list = self.frame_thumbs.winfo_children()[0]
                 self.select_card(submission,the_widget_list,0)
             self.left_index+=1
@@ -517,13 +537,20 @@ class reddit_saved:
 
 
     def refresh_filters(self):
+        self.page_offset=0
         
 
         if self.reverse_flag.get() == 1:
-            list.reverse(self.left_list)
+            if (self.reverse_state==0):
+                list.reverse(self.left_list)
+                self.reverse_state=1
+        if self.reverse_flag.get() == 0:
+            if (self.reverse_state==1):
+                list.reverse(self.left_list)
+                self.reverse_state=0
 
         self.filtered_list = []
-        self.left_index=0
+        #self.left_index=0
 
         for i in self.left_list:
             
@@ -545,7 +572,7 @@ class reddit_saved:
                     continue
             
             if i.thumbnail == 'default':
-                print("Discovered a save that was deleted. The link is: https://www.reddit.com{}".format(i.permalink))
+                #print("Discovered a save that was deleted. The link is: https://www.reddit.com{}".format(i.permalink))
                 self.deleted_list.append('https://www.reddit.com'+i.permalink)
                 continue
 
@@ -559,7 +586,7 @@ class reddit_saved:
                 continue
 
             if 'gfycat' in i.url:
-                print("gfycat link..")
+                #print("gfycat link..")
                 continue
             self.filtered_list.append(i)
         
@@ -889,6 +916,17 @@ class reddit_saved:
 
             self.player.play(full_link)
 
+    def change_page(self,pagenum):
+        
+        self.page_offset = int(pagenum)*100
+        print("page change to ",pagenum,"offset: ",self.page_offset)
+        self.canvas_label.config(text="{}'s Saved List - {} Posts Found - Page {}".format(self.username,len(self.filtered_list),pagenum))
+        t1 = threading.Thread(target=self.display_saved)
+        t1.daemon=True
+        t1.start()
+
+        
+        
 
     def build_feed(self):
         self.left_logged_in=1
@@ -976,6 +1014,19 @@ class reddit_saved:
         self.canvas.yview_moveto('0')
 
         #Build Scrollable Feed
+
+        self.page_bar = ttk.Frame(self.left_column_frame)
+        self.page_bar.pack(pady=3)
+
+        for i in range(0,10):
+            self.page_bar.grid_columnconfigure(i,weight=1)
+        
+        #Pagination
+        for i in range(0,9):
+            button = ttk.Button(self.page_bar,command=lambda a=i:self.change_page(a),text=i+1,width=1)
+            button.grid(row=0,column=i,padx=5.2)
+        
+        
 
         self.end_card = ttk.Frame(self.left_column_frame,takefocus=False)
         self.end_card.pack(side='bottom')
@@ -1283,6 +1334,9 @@ class reddit_saved:
 
 
     def update(self):
+        #for thread in threading.enumerate(): 
+        #    print(thread.name)
+        
         if self.left_logged_in==1:
             self.canvas.config(scrollregion=self.canvas.bbox('all'))
         
@@ -1361,7 +1415,7 @@ package ifneeded awdark 7.12 \
         #ttk.Style().configure('testStyle.TFrame',background='#fffffff') #33393b
         
         self.root.title("Reddit Saved Transferer - https://github.com/DeeFrancois")
-        self.root.geometry("980x600")
+        self.root.geometry("980x610")
         self.root.resizable(False,False)
         self.root.bind('<Escape>',self.close)
         #self.root.overrideredirect(1)
@@ -1378,7 +1432,7 @@ package ifneeded awdark 7.12 \
         self.main_frame.bind('<B1-Motion>',self.move_window)
         self.main_frame.bind('<Button-1>',self.get_pos)
 
-        self.root.after(1000,self.update)
+        self.root.after(100,self.update)
         self.root.mainloop()
 
 def main():
