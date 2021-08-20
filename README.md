@@ -1,7 +1,7 @@
 # Reddit-Saved-Transferer
 A tool for transferring posts from your Reddit Saved list to another account/personal subreddit
 
-<sup>*Ready for public use as I don't plan on simplifying the GUI but it still has some major bugs to fix and I've yet to clean up the code. It works enough for me to use it regularly though, so I figured I'd upload it</sup>
+<sup>*Technically ready for public use as I don't plan on simplifying the GUI but it still has some major bugs to fix and I've yet to clean up the code. It works enough for me to use it regularly though, so I figured I'd upload it. Eventually I'll get around to turning it into an exe and that'll be considered the "release version"</sup>
 
 ![demo](https://raw.githubusercontent.com/DeeFrancois/Reddit-Saved-Transfer/master/DocumentationImages/demo.png)
 
