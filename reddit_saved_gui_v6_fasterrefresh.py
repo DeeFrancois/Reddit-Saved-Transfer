@@ -14,6 +14,7 @@ import webbrowser
 import tkinter.ttk as ttk
 import youtube_dl
 import mpv
+import vlc #Significantly faster but might have problems when trying to let other people use this (will need to walk them through installing the right kind of vlc (?), I forget how I set this up)
 
 
 #r.user.get_saved(params={'sr':'Askreddit'}) Might be able to filter during pull request rather than after 
@@ -41,7 +42,7 @@ class reddit_saved:
         self.b_generation_flag=0
         self.stop_generation_flag=0
         self.b_stop_generation_flag=0
-        self.generate_amount=999
+        self.generate_amount=299 #999 in release, 300 for testing
         self.current_center_acc=0
         self.loop_it=0
         self.transfer_from_arrow=0
@@ -57,6 +58,7 @@ class reddit_saved:
         self.b_generated_flag = 0
         self.b_page_offset = 0
         self.b_reverse_state = 0
+        self.use_vlc=0
         return
     
     def close(self,event):
@@ -409,6 +411,7 @@ class reddit_saved:
         
         self.generation_flag=1
         self.progress_bar.grid(row=0,column=0)
+        count = 0
         while self.left_index < (self.display_limit+self.page_offset) and self.left_index < len(self.filtered_list) and self.stop_generation_flag==0:
 
             current_card=ttk.Frame(self.frame_thumbs)
@@ -462,10 +465,9 @@ class reddit_saved:
                 the_widget_list = self.frame_thumbs.winfo_children()[0]
                 self.select_card(submission,the_widget_list,0)
             self.left_index+=1
-            if len(self.filtered_list)<100:
-                self.progress_bar['value']=int(float(self.left_index/len(self.filtered_list))*100)
-            else:
-                self.progress_bar['value']=int(float(self.left_index/100))
+
+        self.progress_bar['value']=count
+
         self.stop_generation_flag=0
         self.progress_bar.grid_remove()
         self.generation_flag=0
@@ -844,14 +846,17 @@ class reddit_saved:
         self.automatic_flag = tk.IntVar()
         self.delete_after_transfer_flag = tk.IntVar()
         self.video_flag = tk.IntVar()
+        self.vlc_video_flag = tk.IntVar()
         self.sub_mode_flag = tk.IntVar()
 
-        self.check_video = ttk.Checkbutton(self.mid_control_box,var=self.video_flag,text="Video Player",command=self.enable_disable_player)
+        self.check_video = ttk.Checkbutton(self.mid_control_box,var=self.video_flag,text="Video Player (Python-MPV)",command=self.enable_disable_player)
         self.check_video.grid(row=0,column=0,columnspan=2)
+        self.check_vlc = ttk.Checkbutton(self.mid_control_box,var=self.vlc_video_flag,text="Video Player (VLC)",command=self.vlc_enable_disable_player) #disable player, run vlc enable_disable_player
+        self.check_vlc.grid(row=1,column=0,columnspan=2)
         self.check_sub_mode = ttk.Checkbutton(self.mid_control_box,var=self.sub_mode_flag,text="Transfer to Subreddit",command=self.sub_mode_toggle)
-        self.check_sub_mode.grid(row=1,column=0,columnspan=2)
+        self.check_sub_mode.grid(row=2,column=0,columnspan=2)
         self.check_unsave_after_transfer = ttk.Checkbutton(self.mid_control_box,var=self.unsave_after_transfer_flag,text="Unsave After Transfer")
-        self.check_unsave_after_transfer.grid(row=2,column=0,columnspan=2)
+        self.check_unsave_after_transfer.grid(row=3,column=0,columnspan=2)
         
         #Haven't (and idk if I want to) allowed Transfering from sub to sub yet
 
@@ -914,12 +919,14 @@ class reddit_saved:
             self.player.keypress('.')
 
     def enable_disable_player(self):
+        
         if self.video_flag.get()==0:
             self.player.terminate()
             self.video_player_frame.destroy()
+            self.check_vlc.config(state='enabled')
 
-        else: #Turned Off
-
+        else: #Turned On
+            self.check_vlc.config(state='disabled')
             self.video_player_frame = ttk.Frame(self.mid_column_frame)
             self.video_player_frame.grid(row=3,column=0)
             self.video_button = tk.Button(self.video_player_frame,bg='#33393b',width=38,height=9,command=lambda:self.player.keypress('p'))
@@ -929,9 +936,41 @@ class reddit_saved:
 
             self.video_button.bind("<Button-3>",self.fullscreen_maybe)
             self.video_button.bind("<MouseWheel>", self.fullscreen_maybe)
+    
+    def vlc_enable_disable_player(self):
+
+        if self.vlc_video_flag.get()==0:
+            self.player.stop()
+            self.video_player_frame.destroy()
+            self.check_video.config(state='enabled')
+            #print("Off")
+        else: #Turned Off
+            #print("On")
+            
+            self.check_video.config(state='disabled')
+            
+            self.vlc_instance = vlc.Instance('--verbose 0')
+            
+            self.video_player_frame = ttk.Frame(self.mid_column_frame)
+            self.video_player_frame.grid(row=3,column=0)
+            self.video_button = tk.Button(self.video_player_frame,bg='#33393b',width=38,height=9,command=lambda:print("Clicked Video Player"))
+            self.video_button.pack()
+
+            self.player = self.vlc_instance.media_player_new()
+            self.player.set_hwnd(self.video_button.winfo_id())
+            self.video_player_button_frame = ttk.Frame(self.video_player_frame)
+            self.video_player_button_frame.pack(pady=(1,0))
+            self.video_player_resume_button = ttk.Button(self.video_player_button_frame,text="Play/Pause",command=lambda:self.player.pause())
+            self.video_player_resume_button.grid(row=0,column=0)
+            self.player.toggle_fullscreen()
+            #print("here")
 
 
     def play_video(self):
+        if(self.vlc_video_flag.get()==1):
+            self.vlc_play_video()
+            return
+
         if self.video_flag.get()==1:
 
             full_link = self.cc_inner_url
@@ -951,6 +990,42 @@ class reddit_saved:
                     new_link=info_dict['entries'][0]['url']
 
             self.player.play(full_link)
+    
+    def vlc_link_converter(self,link):
+        ytdl_options = {
+            'playlistend':1,
+            'quiet':True
+        }
+
+        if 'imgur' in link:
+            new_link = link.replace('gifv','mp4')
+        else:
+            with youtube_dl.YoutubeDL(ytdl_options) as ytdl:
+                info_dict = ytdl.extract_info(link,download=False)
+                print(info_dict)
+                try:
+                    new_link=info_dict['url']
+                except KeyError:
+                    new_link=info_dict['entries'][0]['url']
+
+        return new_link.replace('.gif','.mp4').replace('.gifv','.mp4')
+
+    def vlc_play_video(self):
+        print("here")
+        if self.vlc_video_flag.get()==1:
+            #if self.nsfw_flag.get()==1
+            
+            #if self.nsfw_flag.get()==1:
+            #    full_link=self.cc_inner_url.replace('gfycat.com','redgifs.com/watch')
+            #    full_link=self.link_converter(full_link)
+            full_link=self.vlc_link_converter(self.cc_inner_url)
+
+            print("VLC PLAYING: ",full_link)
+            self.player.set_mrl(full_link)
+            self.player.play()
+            print("Should be playing")
+            #print(full_link)
+
 
     def change_page(self,pagenum):
         
