@@ -15,7 +15,7 @@ import tkinter.ttk as ttk
 import youtube_dl
 import mpv
 import vlc #Significantly faster but might have problems when trying to let other people use this (will need to walk them through installing the right kind of vlc (?), I forget how I set this up)
-
+# randomly started getting error: [0980cb78] http stream error: local stream 1 error: Cancellation (0x8) when using vlc 
 
 #r.user.get_saved(params={'sr':'Askreddit'}) Might be able to filter during pull request rather than after 
 class reddit_saved:
@@ -83,7 +83,7 @@ class reddit_saved:
         temp=ttk.Frame(self.canvas)
         self.frame_thumbs_id=self.canvas.create_window((0,0),window=temp,anchor='nw')
         self.canvas.config(scrollregion=self.canvas.bbox('all'))
-        #self.canvas.yview_moveto('0')
+        #self.canvas.yview_moveto('0') 
         threading.Thread(target=self.frame_thumbs.destroy()).start 
         #self.frame_thumbs.destroy()
         self.frame_thumbs=temp
@@ -996,8 +996,10 @@ class reddit_saved:
             'playlistend':1,
             'quiet':True
         }
+        if self.nsfw_flag.get()==1 or self.b_nsfw_flag.get()==1:
+            new_link=link.replace('gfycat.com','thumbs2.redgifs.com/watch')
 
-        if 'imgur' in link:
+        elif 'imgur' in link:
             new_link = link.replace('gifv','mp4')
         else:
             with youtube_dl.YoutubeDL(ytdl_options) as ytdl:
@@ -1008,6 +1010,7 @@ class reddit_saved:
                 except KeyError:
                     new_link=info_dict['entries'][0]['url']
 
+        print(new_link)
         return new_link.replace('.gif','.mp4').replace('.gifv','.mp4')
 
     def vlc_play_video(self):
