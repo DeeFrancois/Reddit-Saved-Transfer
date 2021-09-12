@@ -59,6 +59,7 @@ class reddit_saved:
         self.b_page_offset = 0
         self.b_reverse_state = 0
         self.use_vlc=0
+        self.zoom_level = 0
         return
     
     def close(self,event):
@@ -110,8 +111,9 @@ class reddit_saved:
 
         full_url = 'https://www.reddit.com' + url
         webbrowser.open_new(full_url)
-    
+          
     def on_mousewheel(self,event):
+        
 
         try:
             if event.widget.master == self.frame_thumbs or event.widget.master.master == self.frame_thumbs: #If mousehweel event happens on Left Side.. 
@@ -123,7 +125,7 @@ class reddit_saved:
                 self.b_canvas.yview_scroll(int(-1*(event.delta/120)),'units')
         except:
             pass
-    
+        
     def on_rightclick(self,event): #Right Click to hide post widget
 
         try:
@@ -906,43 +908,75 @@ class reddit_saved:
         self.progress_bar = ttk.Progressbar(self.progress_bar_frame,orient='horizontal',length=100,mode='determinate')
         self.b_progress_bar = ttk.Progressbar(self.progress_bar_frame,orient='horizontal',length=100,mode='determinate')
 
+
         ###VIDEO PLAYER###
        
-    def fullscreen_maybe(self,event):
+    def mpv_scroll_handler(self,event):
         #print(event)
-        if 'MouseWheel' in str(event):
-            if event.delta > 0:
-                self.player.keypress('0')
-            else:
-                self.player.keypress('9')
+        if event.delta > 0:
+            self.zoom_level+=2
+            self.current_new_button_width+=6
+            self.current_new_button_height+=2
+            self.current_new_button_xpos -=21
+            self.current_new_button_ypos-=20
+            self.video_button.config(width=self.current_new_button_width,height=self.current_new_button_height)
+            self.video_button.place(x=self.current_new_button_xpos,y=self.current_new_button_ypos)
         else:
-            self.player.keypress('.')
+            self.zoom_level-=2
+            self.current_new_button_width-=6
+            self.current_new_button_height-=2
+            self.current_new_button_xpos +=21
+            self.current_new_button_ypos+=20
+            self.video_button.config(width=self.current_new_button_width,height=self.current_new_button_height)
+            self.video_button.place(x=self.current_new_button_xpos,y=self.current_new_button_ypos)
 
+        #if 'MouseWheel' in str(event):
+        #    if event.delta > 0:
+        #        self.player.keypress('0')
+        #    else:
+        #        self.player.keypress('9')
+        #else:
+        #    self.player.keypress('.')
+    def reset_zoom(self,event):
+        self.video_button.config(width=38,height=9)
+        self.video_button.place(x=348,y=340)
+        self.zoom_level=0
     def enable_disable_player(self):
-        
+        self.current_new_button_width=38
+        self.current_new_button_height=9
+        self.current_new_button_xpos = 348
+        self.current_new_button_ypos = 340
+
         if self.video_flag.get()==0:
             self.player.terminate()
-            self.video_player_frame.destroy()
+            self.fake_video_player_frame.destroy()
+            self.video_button.destroy()
             self.check_vlc.config(state='enabled')
 
         else: #Turned On
             self.check_vlc.config(state='disabled')
-            self.video_player_frame = ttk.Frame(self.mid_column_frame)
-            self.video_player_frame.grid(row=3,column=0)
-            self.video_button = tk.Button(self.video_player_frame,bg='#33393b',width=38,height=9,command=lambda:self.player.keypress('p'))
-            self.video_button.pack()
+            self.fake_video_player_frame = ttk.Frame(self.mid_column_frame)
+            self.fake_video_player_frame.grid(row=3,column=0)
+            self.fake_video_button = tk.Button(self.fake_video_player_frame,bg='#33393b',bd=0,highlightthickness=0,width=38,height=9)
+            self.fake_video_button.pack()
+
+            #self.video_button.bind("<Button-3>",self.fullscreen_maybe)
+            
+            self.video_button=tk.Button(self.root,width=38,height=9,bg='#33393b',command=lambda:self.player.keypress('p'))
+            self.video_button.place(x=348,y=340)
+            self.video_button.bind("<MouseWheel>", self.mpv_scroll_handler)
+            self.video_button.bind("<Button-3>",self.reset_zoom)
             self.player=mpv.MPV(ytdl=True,ytdl_format="best",background='#33393b',volume=0,input_default_bindings=True,input_vo_keyboard=True,wid=str(int(self.video_button.winfo_id())))
             self.player.loop_playlist='inf'
 
-            self.video_button.bind("<Button-3>",self.fullscreen_maybe)
-            self.video_button.bind("<MouseWheel>", self.fullscreen_maybe)
     
     def vlc_enable_disable_player(self):
 
         if self.vlc_video_flag.get()==0:
             self.player.stop()
-            self.video_player_frame.destroy()
+            self.fake_video_player_frame.destroy()
             self.check_video.config(state='enabled')
+            #self.video_button.destroy()
             #print("Off")
         else: #Turned Off
             #print("On")
@@ -951,19 +985,20 @@ class reddit_saved:
             
             self.vlc_instance = vlc.Instance('--verbose 0')
             
-            self.video_player_frame = ttk.Frame(self.mid_column_frame)
-            self.video_player_frame.grid(row=3,column=0)
-            self.video_button = tk.Button(self.video_player_frame,bg='#33393b',width=38,height=9,command=lambda:print("Clicked Video Player"))
-            self.video_button.pack()
+            self.fake_video_player_frame = ttk.Frame(self.mid_column_frame)
+            self.fake_video_player_frame.grid(row=3,column=0)
+            self.fake_video_button = tk.Button(self.fake_video_player_frame,bg='#33393b',width=38,height=9,command=lambda:print("Clicked Video Player"))
+            self.fake_video_button.pack()
 
-            self.player = self.vlc_instance.media_player_new()
-            self.player.set_hwnd(self.video_button.winfo_id())
-            self.video_player_button_frame = ttk.Frame(self.video_player_frame)
+            
+            self.video_player_button_frame = ttk.Frame(self.fake_video_player_frame)
             self.video_player_button_frame.pack(pady=(1,0))
             self.video_player_resume_button = ttk.Button(self.video_player_button_frame,text="Play/Pause",command=lambda:self.player.pause())
             self.video_player_resume_button.grid(row=0,column=0)
-            self.player.toggle_fullscreen()
-            #print("here")
+            #self.video_button=tk.Button(self.root,width=38,height=9)
+            #self.video_button.place(x=348,y=329)
+            self.player = self.vlc_instance.media_player_new()
+            self.player.set_hwnd(self.fake_video_button.winfo_id())
 
 
     def play_video(self):
@@ -997,11 +1032,12 @@ class reddit_saved:
             'quiet':True
         }
         if self.nsfw_flag.get()==1 or self.b_nsfw_flag.get()==1:
-            new_link=link.replace('gfycat.com','thumbs2.redgifs.com/watch')
+            new_link=link.replace('gfycat.com','redgifs.com/watch')
 
-        elif 'imgur' in link:
+        if 'imgur' in link:
             new_link = link.replace('gifv','mp4')
         else:
+            print("Before ytdl: ",new_link)
             with youtube_dl.YoutubeDL(ytdl_options) as ytdl:
                 info_dict = ytdl.extract_info(link,download=False)
                 print(info_dict)
@@ -1014,7 +1050,7 @@ class reddit_saved:
         return new_link.replace('.gif','.mp4').replace('.gifv','.mp4')
 
     def vlc_play_video(self):
-        print("here")
+        #print("here")
         if self.vlc_video_flag.get()==1:
             #if self.nsfw_flag.get()==1
             
@@ -1551,7 +1587,7 @@ package ifneeded awdark 7.12 \
         #ttk.Style().configure('testStyle.TFrame',background='#fffffff') #33393b
         
         self.root.title("Reddit Saved Transferer - https://github.com/DeeFrancois")
-        self.root.geometry("980x610")
+        self.root.geometry("984x610")
         self.root.resizable(False,False)
         self.root.bind('<Escape>',self.close)
         #self.root.overrideredirect(1)
