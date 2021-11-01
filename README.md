@@ -1,25 +1,27 @@
 # Reddit-Saved-Transferer
-A tool for transferring posts from your Reddit Saved list to another account/personal subreddit
+A tool for transferring posts from your Reddit Saved list to another account/personal subreddit.
 
-<sup>*Technically ready for public use as I don't plan on simplifying the GUI but it still has some major bugs to fix and I've yet to clean up the code. It works enough for me to use it regularly though, so I figured I'd upload it. Eventually I'll get around to turning it into an exe and that'll be considered the "release version"</sup>
+(_.exe version coming soon_)
+
+<sup>Disclaimer: This is technically ready for public use as I don't plan on simplifying the GUI, but it still has some major bugs to fix and I've yet to clean up the code. It works well enough for me to use it regularly though, so I figured I'd upload it.</sup>
 
 ![demo](https://raw.githubusercontent.com/DeeFrancois/Reddit-Saved-Transfer/master/DocumentationImages/demo.png)
 
 # Motivation
-I found out a while ago that your Reddit Saved List isn't infinite. So I initially made this so I could transfer some of my saves to a different account. 
-Then I noticed reddit doesn't have much functionality for sorting/browsing your saved list so that also became a part of it.
+I found out a while ago that your Saved list on Reddit isn't infinite so I made this so I could transfer some of my saves to a different account. 
+While working on this I noticed reddit doesn't have much functionality for sorting/browsing your saved list so that also became a part of it.
 
 # Features
-- Scroll through the last 1000 posts in your saved list (API Limit, but when you unsave a post you can see even older saves)
-- Hotlinks so you can open the post in your browser
-- Thumbnail previews
-- Sort saved list by SFW/NSFW and by Subreddit
-- Drop down menu that shows all of the subreddits in your saved list (can be used for filtering)
-- Video Player (Powered by python-mpv and Youtube-DL)
-- Pull last 100 posts (hot/top/new) from a Subreddit 
-- Automated transfering of posts to another account
+- Automated transferring of posts to another account
 - Automated transferring of posts to a subreddit
-- Extract a txt file containing a list of saved posts that were later deleted by the user/moderators
+- Scroll through the last 1000 posts in your saved list (API Limit, but when you unsave a post you can see even older saves)
+- Hotlinks so you can open a post in your browser
+- Thumbnail previews
+- Sorting filters
+- Drop down menu that shows all of the subreddits in your saved list (can be used for filtering)
+- Video Players (both VLC and Python-MPV)
+- Subreddit feed retrieval (100 posts from new/hot/top)
+- Extract a text file containing a list of saved posts that were later deleted
 
 # How to Use (May have to just make a video..)
 
